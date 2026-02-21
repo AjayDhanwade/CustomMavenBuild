@@ -28,7 +28,7 @@ jobs:
           username: ${{ secrets.LAB_USERNAME }}
           key: ${{ secrets.LAB_SSH_KEY }}
           port: ${{ secrets.LAB_PORT }}
-          script: |
-            curl -X POST \
-                 -u ${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }} \
-                 "http://localhost:8080/job/InsuredAssurance/build?token=${{ secrets.REMOTE_BUILD_TOKEN }}"
+          connect_timeout: 10s
+          first_ssh: |
+            sudo curl -I -u admin:110f22c3db56391d6cba07cfbe94fb36 http://localhost:8080/user/insuredassurance/build?token=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
+			
