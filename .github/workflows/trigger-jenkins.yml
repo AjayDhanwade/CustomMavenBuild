@@ -37,10 +37,6 @@ jobs:
           pass: ${{ secrets.LAB_PASSWORD }}
           port: ${{ secrets.LAB_PORT }}
           connect_timeout: 10s
-          env:
-            JENKINS_USER: ${{ secrets.JENKINS_USER }}
-            JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
-            REMOTE_BUILD_TOKEN: ${{ secrets.REMOTE_BUILD_TOKEN }}
           first_ssh: |
-            curl -X POST -u $JENKINS_USER:$JENKINS_TOKEN \
-              http://localhost:8080/job/insuredassurance/build?token=$REMOTE_BUILD_TOKEN
+              curl -X POST "http://localhost:8080/job/InsuredAssurance/build?token=token123" \
+              --user admin:110370c4824aed772cc6ef8ee8438e5695
