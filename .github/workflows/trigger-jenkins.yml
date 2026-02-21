@@ -1,38 +1,48 @@
-name: Build and Trigger Jenkins
+name: CI Pipeline - Build, Test & Trigger Jenkins
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build-test-trigger:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout your repo
+      # 1️⃣ Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # Step 2: Set up Java 21 and Maven 3.9.8
-      - name: Setup Java and Maven
-        uses: actions/setup-java@v3
+        uses: actions/checkout@v4
         with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
+          fetch-depth: 0
 
-      # Step 3: Run Maven tests
-      - name: Run Maven test
-        run: mvn -B test --file pom.xml
+      # 2️⃣ Set up Java 17 (Temurin)
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-      # Step 4: Trigger Jenkins job over SSH
-      - name: Trigger Jenkins over SSH
-        uses: appleboy/ssh-action@v0.1.7
+      # 3️⃣ Set up Maven 3.9.8
+      - name: Setup Maven
+        uses: s4u/setup-maven-action@v1.7.0
+        with:
+          maven-version: '3.9.8'
+
+      # 4️⃣ Run Unit Tests
+      - name: Test with Maven
+        run: mvn clean test
+
+      # 5️⃣ Connect to Lab via SSH Key & Trigger Jenkins Job
+      - name: Connect to Lab and Trigger Jenkins Job
+        uses: cross-the-world/ssh-scp-ssh-pipelines@latest
         with:
           host: ${{ secrets.LAB_HOSTNAME }}
-          username: ${{ secrets.LAB_USERNAME }}
+          user: ${{ secrets.LAB_USERNAME }}
           key: ${{ secrets.LAB_SSH_KEY }}
           port: ${{ secrets.LAB_PORT }}
           connect_timeout: 10s
-          script: |
+          first_ssh: |
             curl -X POST -u ${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }} \
-            http://localhost:8080/job/InsuredAssurance/build?token=${{ secrets.REMOTE_BUILD_TOKEN }}
+            http://localhost:8080/job/insuredassurance/build?token=${{ secrets.REMOTE_BUILD_TOKEN }}
