@@ -1,48 +1,46 @@
 name: CI Pipeline - Build, Test & Trigger Jenkins
 
 on:
-  push:
+  pull_request:
     branches:
-      - main
+      - "*"
   workflow_dispatch:
 
 jobs:
-  build-test-trigger:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      # 1️⃣ Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      # 2️⃣ Set up Java 17 (Temurin)
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      # 2️⃣ Setup Maven
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@1.7.0
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          checkout-fetch-depth: 0
+          java-version: 21
+          java-distribution: temurin
+          maven-version: 3.9.8
 
-      # 3️⃣ Set up Maven 3.9.8
-      - name: Setup Maven
-        uses: s4u/setup-maven-action@v1.7.0
-        with:
-          maven-version: '3.9.8'
-
-      # 4️⃣ Run Unit Tests
+      # 3️⃣ Run Maven Tests
       - name: Test with Maven
-        run: mvn clean test
+        run: mvn -B test --file pom.xml
 
-      # 5️⃣ Connect to Lab via SSH Key & Trigger Jenkins Job
+      # 4️⃣ Connect to Lab and Trigger Jenkins Job
       - name: Connect to Lab and Trigger Jenkins Job
         uses: cross-the-world/ssh-scp-ssh-pipelines@latest
         with:
           host: ${{ secrets.LAB_HOSTNAME }}
           user: ${{ secrets.LAB_USERNAME }}
-          key: ${{ secrets.LAB_SSH_KEY }}
+          pass: ${{ secrets.LAB_PASSWORD }}
           port: ${{ secrets.LAB_PORT }}
           connect_timeout: 10s
+          env:
+            JENKINS_USER: ${{ secrets.JENKINS_USER }}
+            JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+            REMOTE_BUILD_TOKEN: ${{ secrets.REMOTE_BUILD_TOKEN }}
           first_ssh: |
-            curl -X POST -u ${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }} \
-            http://localhost:8080/job/insuredassurance/build?token=${{ secrets.REMOTE_BUILD_TOKEN }}
+            curl -X POST -u $JENKINS_USER:$JENKINS_TOKEN \
+              http://localhost:8080/job/insuredassurance/build?token=$REMOTE_BUILD_TOKEN
